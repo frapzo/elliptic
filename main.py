@@ -28,7 +28,7 @@ class prime256v1:
         # h is the cofactor
         self.h = 0x1
 
-def encrypt_ECC(msg, pubKey, privKey):
+def encrypt_ECC(msg, pubKey):
     # generate shared secret key
     sharedKey = secrets.randbelow(curve.field.n)
 
@@ -67,7 +67,7 @@ if __name__ == "__main__":
     pubKey = privKey * curve.g
 
     # Encrypt message with public key
-    encryptedMsg = encrypt_ECC(MESSAGE, pubKey, privKey)
+    encryptedMsg = encrypt_ECC(MESSAGE, pubKey)
 
     # Decrypt message with private key
     decryptedMsg = decrypt_ECC(encryptedMsg, privKey)
