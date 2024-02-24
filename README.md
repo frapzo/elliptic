@@ -4,4 +4,4 @@ This is a practical implementation of elliptic curve cryptography using prime256
 
 This implementation is not guaranteed to be correct.
 
-This was only made for educational purposes.
+The only purpose of this implementation is to show a practical explained example of ECC in use.
