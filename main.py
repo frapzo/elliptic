@@ -34,10 +34,10 @@ def encrypt_ECC(msg, pubKey):
     sharedKey = secrets.randbelow(curve.field.n)
 
     # calculate shared ECC key
-    pubSharedKey = sharedKey * pubKey # pubSharedKey = sharedKey * (privKey * curve.g)
+    sharedECCKey = sharedKey * pubKey # pubSharedKey = sharedKey * (privKey * curve.g)
 
     # generate AES key from shared ECC key
-    secretKey = ecc_point_to_256_bit_key(pubSharedKey)
+    secretKey = ecc_point_to_256_bit_key(sharedECCKey)
 
     # encrypt message with AES key
     ciphertext, nonce, authTag = encrypt_AES_GCM(msg, secretKey)
