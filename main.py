@@ -1,74 +1,41 @@
 from tinyec import registry
 import secrets
-from functions import encrypt_AES_GCM, decrypt_AES_GCM, ecc_point_to_256_bit_key
+from ecc import encrypt_ECC, decrypt_ECC
 
 MESSAGE = b'Hello, World!'
 
 curve = registry.get_curve('secp256r1')
 
-# example of a class to store the curve parameters
-class prime256v1:
-    def __init__(self) -> None:
-        # also known as secp256r1 or P-256
-        self.name = "prime256v1"
+mailbox = {}
 
-        # p is the prime for modulo
-        self.p = 0xffffffff00000001000000000000000000000000ffffffffffffffffffffffff
+# generate private keys for Alice and Bob
+alicePrivKey = secrets.randbelow(curve.field.n)
+bobPrivKey = secrets.randbelow(curve.field.n)
 
-        # a and b are the coefficients for the elliptic curve equation
-        self.a = 0xffffffff00000001000000000000000000000000fffffffffffffffffffffffc
-        self.b = 0x5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604b
+def prepare_keys():
+    # generate public keys for Alice and Bob
+    alicePubKey = alicePrivKey * curve.g
+    bobPubKey = bobPrivKey * curve.g
 
-        # G is the generator point
-        self.G = (0x6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296, 0x4fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5)
-        
-        # n is the cardinality of the curve
-        self.n = 0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551
+    # store public keys in mailbox (central authority)
+    mailbox['alice'] = alicePubKey
+    mailbox['bob'] = bobPubKey
 
-        # h is the cofactor
-        self.h = 0x1
+def alice_send_message():
+    # Encrypt message with public key
+    public_key = mailbox['bob']
+    encryptedMsg = encrypt_ECC(MESSAGE, public_key)
+    mailbox['encryptedMsg'] = encryptedMsg
 
-def encrypt_ECC(msg, pubKey):
-    # generate shared secret key
-    sharedKey = secrets.randbelow(curve.field.n)
+    return encryptedMsg
 
-    # calculate shared ECC key
-    sharedECCKey = sharedKey * pubKey # sharedECCKey = sharedKey * (privKey * curve.g)
-
-    # generate AES key from shared ECC key
-    secretKey = ecc_point_to_256_bit_key(sharedECCKey)
-
-    # encrypt message with AES key
-    ciphertext, nonce, authTag = encrypt_AES_GCM(msg, secretKey)
-
-    # obfuscate the shared key
-    sharedPoint = sharedKey * curve.g
-    
-    return (ciphertext, nonce, authTag, sharedPoint)
-
-def decrypt_ECC(encryptedMsg, privKey):
-    # extract data from encrypted message
-    (ciphertext, nonce, authTag, sharedPoint) = encryptedMsg
-
-    # calculate shared ECC key
-    sharedECCKey = privKey * sharedPoint # sharedECCKey = privKey * (sharedKey * curve.g)
-
-    # generate AES key from shared ECC key
-    secretKey = ecc_point_to_256_bit_key(sharedECCKey)
-
-    # decrypt message with AES key
-    plaintext = decrypt_AES_GCM(ciphertext, nonce, authTag, secretKey)
-
-    return plaintext
+def bob_receive_message():
+    # Decrypt message with private key
+    encryptedMsg = mailbox.pop('encryptedMsg')
+    decryptedMsg = decrypt_ECC(encryptedMsg, bobPrivKey)
+    print(f"Decrypted message: {decryptedMsg.decode('utf-8')}")
 
 if __name__ == "__main__":
-    # Generate public and private keys
-    privKey = secrets.randbelow(curve.field.n)
-    pubKey = privKey * curve.g
-
-    # Encrypt message with public key
-    encryptedMsg = encrypt_ECC(MESSAGE, pubKey)
-
-    # Decrypt message with private key
-    decryptedMsg = decrypt_ECC(encryptedMsg, privKey)
-    print(f"Decrypted message: {decryptedMsg.decode('utf-8')}")
+    prepare_keys()
+    alice_send_message()
+    bob_receive_message()
