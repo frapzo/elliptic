@@ -34,7 +34,7 @@ def encrypt_ECC(msg, pubKey):
     sharedKey = secrets.randbelow(curve.field.n)
 
     # calculate shared ECC key
-    sharedECCKey = sharedKey * pubKey # pubSharedKey = sharedKey * (privKey * curve.g)
+    sharedECCKey = sharedKey * pubKey # sharedECCKey = sharedKey * (privKey * curve.g)
 
     # generate AES key from shared ECC key
     secretKey = ecc_point_to_256_bit_key(sharedECCKey)
