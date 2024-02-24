@@ -1,13 +1,12 @@
 from tinyec import registry
-import hashlib, binascii, secrets
+import secrets
 from functions import encrypt_AES_GCM, decrypt_AES_GCM, ecc_point_to_256_bit_key
 
 MESSAGE = b'Hello, World!'
 
 curve = registry.get_curve('secp256r1')
 
-secret_key = None
-
+# example of a class to store the curve parameters
 class prime256v1:
     def __init__(self) -> None:
         # also known as secp256r1 or P-256
@@ -29,7 +28,7 @@ class prime256v1:
         # h is the cofactor
         self.h = 0x1
 
-def encrypt_ECC(msg, pubKey):
+def encrypt_ECC(msg, pubKey, privKey):
     # generate shared secret key
     sharedKey = secrets.randbelow(curve.field.n)
 
@@ -44,7 +43,7 @@ def encrypt_ECC(msg, pubKey):
 
     # obfuscate the shared key
     sharedPoint = sharedKey * curve.g
-
+    
     return (ciphertext, nonce, authTag, sharedPoint)
 
 def decrypt_ECC(encryptedMsg, privKey):
@@ -59,6 +58,7 @@ def decrypt_ECC(encryptedMsg, privKey):
 
     # decrypt message with AES key
     plaintext = decrypt_AES_GCM(ciphertext, nonce, authTag, secretKey)
+
     return plaintext
 
 if __name__ == "__main__":
@@ -67,17 +67,8 @@ if __name__ == "__main__":
     pubKey = privKey * curve.g
 
     # Encrypt message with public key
-    encryptedMsg = encrypt_ECC(MESSAGE, pubKey)
-
-    # Create object to store encrypted message
-    encryptedMsgObj = {
-        'ciphertext': binascii.hexlify(encryptedMsg[0]),
-        'nonce': binascii.hexlify(encryptedMsg[1]),
-        'authTag': binascii.hexlify(encryptedMsg[2]),
-        'ciphertextPubKey': hex(encryptedMsg[3].x) + hex(encryptedMsg[3].y % 2)[2:]
-    }
-    print("hex(x) + hex(y) % 2:", encryptedMsgObj["ciphertextPubKey"])
+    encryptedMsg = encrypt_ECC(MESSAGE, pubKey, privKey)
 
     # Decrypt message with private key
     decryptedMsg = decrypt_ECC(encryptedMsg, privKey)
-    # print("decrypted msg:", decryptedMsg)
+    print(f"Decrypted message: {decryptedMsg.decode('utf-8')}")
