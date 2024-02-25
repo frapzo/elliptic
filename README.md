@@ -1,6 +1,6 @@
-# elliptic
+# ECC with ECDF and AES GCM
 
-This is a practical implementation of elliptic curve cryptography using prime256v1 in python.
+This is a practical implementation of elliptic curve cryptography using ECDF and prime256v1, with AES in GCM mode, in python.
 
 This implementation is not guaranteed to be correct.
 
