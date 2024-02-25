@@ -5,3 +5,5 @@ This is a practical implementation of elliptic curve cryptography using ECDF and
 This implementation is not guaranteed to be correct.
 
 The only purpose of this implementation is to show a practical explained example of ECC in use.
+
+The implementation is loosely based on https://cryptobook.nakov.com/asymmetric-key-ciphers/ecc-encryption-decryption
