@@ -1,14 +1,13 @@
 from tinyec import registry
 from tinyec.ec import Point
-import secrets, hashlib
+import hashlib
 from aes import encrypt_AES_GCM, decrypt_AES_GCM
 
 curve = registry.get_curve('secp256r1')
 
 class prime256v1:
-    '''
-    example of a class that holds the parameters for the prime256v1 curve
-    '''
+    """example of a class that holds the parameters for the prime256v1 curve"""
+    
     def __init__(self) -> None:
         # also known as secp256r1 or P-256
         self.name = "prime256v1"
@@ -30,51 +29,53 @@ class prime256v1:
         # (h = #E(F_p)/n = number of points that satisfy curve equation / cardinality of chosen subgroup)
         self.h = 0x1
 
-def ecc_point_to_256_bit_key(point):
-    '''hash the x and y coordinates of given ECC point to get desired (AES) key length'''
+def ecc_point_to_256_bit_key(point: Point) -> bytes:
+    """hash the x and y coordinates of given ECC point to get desired (AES) key length
+
+    Args:
+        point (Point): ECC point
+
+    Returns:
+        bytes: 256-bit key
+    """
     sha = hashlib.sha256(int.to_bytes(point.x, 32, 'big'))
     sha.update(int.to_bytes(point.y, 32, 'big'))
 
     return sha.digest()
 
-def encrypt_ECC(msg: bytes, pubKey):
-    '''encrypt a message with a given ECC public key
+def encrypt_ECC(msg: bytes, sharedKey: Point) -> tuple:
+    """encrypt a message with a given shared ECC key
 
-    returns (ciphertext, nonce, authTag, x, y) tuple'''
-    # generate shared secret key
-    sharedKey = secrets.randbelow(curve.field.n)
+    Args:
+        msg (bytes): message to be encrypted
+        sharedKey (Point): shared ECC key
 
-    # calculate shared ECC key
-    sharedECCKey = sharedKey * pubKey # sharedECCKey = sharedKey * (privKey * curve.g)
-
-    # generate AES key from shared ECC key
-    secretKey = ecc_point_to_256_bit_key(sharedECCKey)
+    Returns:
+        tuple: (ciphertext, nonce, authTag)
+    """
+    # derive AES key from shared ECC key
+    secretKey = ecc_point_to_256_bit_key(sharedKey)
 
     # encrypt message with AES key
     ciphertext, nonce, authTag = encrypt_AES_GCM(msg, secretKey)
 
-    # obfuscate the shared key
-    sharedPoint = sharedKey * curve.g
-    
-    return (ciphertext, nonce, authTag, sharedPoint.x, sharedPoint.y)
+    return (ciphertext, nonce, authTag)
 
-def decrypt_ECC(encryptedMsg: tuple, privKey) -> bytes:
-    '''decrypt a message with a given ECC private key
+def decrypt_ECC(encryptedMsg: tuple, sharedKey: Point) -> bytes:
+    """decrypt a message with a given shared ECC key
 
-    message is expected in format (ciphertext, nonce, authTag, x, y)
+    Args:
+        encryptedMsg (tuple): (ciphertext, nonce, authTag)
+        sharedKey (Point): shared ECC key
 
-    returns plaintext'''
+    Returns:
+        bytes: encoded message
+    """
     # extract data from encrypted message
-    (ciphertext, nonce, authTag, x, y) = encryptedMsg
+    (ciphertext, nonce, authTag) = encryptedMsg
 
-    # reconstruct point from x and y (needed to access EC operations on the point)
-    sharedPoint = Point(curve, x, y)
-
-    # calculate shared ECC key
-    sharedECCKey = privKey * sharedPoint # sharedECCKey = privKey * (sharedKey * curve.g)
-
-    # generate AES key from shared ECC key
-    secretKey = ecc_point_to_256_bit_key(sharedECCKey)
+    # derive AES key from shared ECC key
+    secretKey = ecc_point_to_256_bit_key(sharedKey)
 
     # decrypt message with AES key
     plaintext = decrypt_AES_GCM(ciphertext, nonce, authTag, secretKey)

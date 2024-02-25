@@ -1,6 +1,15 @@
 from Crypto.Cipher import AES
 
-def encrypt_AES_GCM(msg, secretKey):
+def encrypt_AES_GCM(msg: bytes, secretKey: bytes) -> tuple:
+    """encrypt a message with a given secret key using AES in GCM mode
+
+    Args:
+        msg (bytes): message to be encrypted
+        secretKey (bytes): secret key
+
+    Returns:
+        tuple: (ciphertext, nonce, authTag)
+    """
     # create cipher
     aesCipher = AES.new(secretKey, AES.MODE_GCM)
 
@@ -9,7 +18,18 @@ def encrypt_AES_GCM(msg, secretKey):
 
     return (ciphertext, aesCipher.nonce, authTag)
 
-def decrypt_AES_GCM(ciphertext, nonce, authTag, secretKey):
+def decrypt_AES_GCM(ciphertext: bytes, nonce, authTag: bytes, secretKey: bytes) -> bytes:
+    """decrypt a message with a given secret key using AES in GCM mode
+
+    Args:
+        ciphertext (bytes): message to be decrypted
+        nonce (_type_): nonce
+        authTag (bytes): authentication tag
+        secretKey (bytes): secret key
+
+    Returns:
+        bytes: encoded message
+    """
     # create cipher
     aesCipher = AES.new(secretKey, AES.MODE_GCM, nonce)
 
