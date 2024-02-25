@@ -12,9 +12,10 @@ CA = {}
 # open channel to send messages 
 mailbox = []
 
-# Bob has a private key
+# private keys
 bobPrivKey: int = secrets.randbelow(curve.field.n)
 alicePrivKey: int = secrets.randbelow(curve.field.n)
+
 sharedKey: Point = None
 
 def prepare_CA() -> None:
